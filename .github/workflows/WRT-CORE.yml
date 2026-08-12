@@ -46,6 +46,9 @@ on:
       WRT_ARCH:
         required: false
         type: string
+      WRT_DEVICE:
+        required: true
+        type: string
 env:
   GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
   WRT_CONFIG: ${{inputs.WRT_CONFIG}}
@@ -62,6 +65,7 @@ env:
   WRT_DIR: 'wrt'
   CI_NAME: ${{inputs.CI_NAME}}
   WRT_ARCH: ${{inputs.WRT_ARCH}}
+  WRT_DEVICE: ${{inputs.WRT_DEVICE}}
 
 jobs:
   core:
@@ -113,21 +117,25 @@ jobs:
           echo "WRT_DATE=$(TZ=UTC-8 date +"%y.%m.%d-%H.%M.%S")" >> $GITHUB_ENV
           echo "WRT_MARK=$(echo $GITHUB_REPOSITORY | cut -d '/' -f 1)" >> $GITHUB_ENV
           echo "WRT_VER=$(echo $WRT_REPO | cut -d '/' -f 4)-$WRT_BRANCH" >> $GITHUB_ENV
-          echo "WRT_TARGET=$(grep -m 1 -oP '^CONFIG_TARGET_\K[\w]+(?=\=y)' ./Config/$WRT_CONFIG.txt | tr '[:lower:]' '[:upper:]')" >> $GITHUB_ENV
+          echo "WRT_TARGET=$(grep -m 1 -oP '^CONFIG_TARGET_\K[\w]+(?=\=y)' ./Config/${WRT_CONFIG}-${WRT_DEVICE}.txt | tr '[:lower:]' '[:upper:]')" >> $GITHUB_ENV
           echo "WRT_KVER=none" >> $GITHUB_ENV
           echo "WRT_LIST=none" >> $GITHUB_ENV
 
           echo "WRT_CI=$WRT_CI" >> $GITHUB_ENV
           [[ -z $WRT_ARCH ]] && {
-            export WRT_ARCH=$(sed -n 's/.*_DEVICE_\(.*\)_DEVICE_.*/\1/p' $GITHUB_WORKSPACE/Config/$WRT_CONFIG.txt | head -n 1)
+            export WRT_ARCH=$(sed -n 's/.*_DEVICE_\(.*\)_DEVICE_.*/\1/p' $GITHUB_WORKSPACE/Config/${WRT_CONFIG}-${WRT_DEVICE}.txt | head -n 1)
             echo "WRT_ARCH=$WRT_ARCH" >> $GITHUB_ENV
           }
-          echo "$WRT_REPO/$WRT_BRANCH" > "$GITHUB_WORKSPACE/repo_flag"
+          echo "$WRT_REPO/$WRT_BRANCH/$WRT_DEVICE" > "$GITHUB_WORKSPACE/repo_flag"
       - name: Clone Code
+        env:
+          WRT_COMMIT: ee98d40b69c373fcd537d8aff8a143aa9ee45ea5   # LiBwrt tag v25.12.1 稳定版(带NSS)，git fetch 需完整hash
         run: |
-          git clone --depth=1 --single-branch --branch $WRT_BRANCH $WRT_REPO ./wrt/
-
-          cd ./wrt/ && echo "WRT_HASH=$(git log -1 --pretty=format:'%h')" >> $GITHUB_ENV
+          git init ./wrt && cd ./wrt
+          git remote add origin $WRT_REPO
+          git fetch --depth=1 origin $WRT_COMMIT
+          git checkout FETCH_HEAD
+          echo "WRT_HASH=$(git log -1 --pretty=format:'%h')" >> $GITHUB_ENV
 
 
 #############################测试代码####
@@ -273,7 +281,7 @@ jobs:
       - name: Release Firmware
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{env.CI_NAME}}-${{env.WRT_CONFIG}}_${{env.WRT_DATE}}
+          tag_name: ${{env.CI_NAME}}-${{env.WRT_CONFIG}}-${{env.WRT_DEVICE}}_${{env.WRT_DATE}}
           files: ./wrt/upload/*.*
           body: |
             京东云亚瑟AX1800pro专属固件包
