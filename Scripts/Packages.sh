@@ -135,7 +135,7 @@ rm -rf ../feeds/packages/net/{dae*}
 #git clone -b 24.x https://github.com/sbwml/packages_lang_golang ../feeds/packages/lang/golang
 
 
-#cp -r $GITHUB_WORKSPACE/package/* ./
+[ -d "$GITHUB_WORKSPACE/package" ] && cp -r $GITHUB_WORKSPACE/package/* ./
 
 # #coremark修复
 # sed -i 's/mkdir \$(PKG_BUILD_DIR)\/\$(ARCH)/mkdir -p \$(PKG_BUILD_DIR)\/\$(ARCH)/g' ../feeds/packages/utils/coremark/Makefile

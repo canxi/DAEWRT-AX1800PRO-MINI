@@ -122,8 +122,6 @@ function set_kernel_size() {
   sed -i "/^define Device\/redmi_ax5-jdcloud/,/^endef/ { /KERNEL_SIZE := 6144k/s//KERNEL_SIZE := 12288k/ }" $image_file
   sed -i "/^define Device\/link_nn6000-v1/,/^endef/ { /KERNEL_SIZE := 6144k/s//KERNEL_SIZE := 12288k/ }" $image_file
   sed -i "/^define Device\/linksys_mr/,/^endef/ { /KERNEL_SIZE := 8192k/s//KERNEL_SIZE := 12288k/ }" $image_file
-  # link_nn6000-v2 继承 v1 但 DTS 按设备名独立推导，LiBwrt 无 v2 独立 DTS，显式指定用 v1 的
-  sed -i "/^define Device\/link_nn6000-v2/,/^endef/ { s/DEVICE_MODEL := NN6000 v2/DEVICE_MODEL := NN6000 v2\n\tDEVICE_DTS := ipq6000-nn6000-v1/ }" $image_file
   cat $image_file
 }
 #开启内存回收补丁
